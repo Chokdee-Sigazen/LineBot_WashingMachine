@@ -14,6 +14,32 @@ const app = express();
 
 let queue = [];
 
+// Endpoint to add a user to the queue
+app.post('/add-to-queue/:userId', (req, res) => {
+  const userId = req.params.userId;
+  addToQueue(userId);
+  res.send('User added to queue');
+});
+
+// Endpoint to remove a user from the queue
+app.post('/remove-from-queue', (req, res) => {
+  removeFromQueue();
+  res.send('First user removed from queue');
+});
+
+// Endpoint to get the size of the queue
+app.get('/queue-size', (req, res) => {
+  const queueSize = getQueueSize();
+  res.json({ size: queueSize });
+});
+
+// Endpoint to get the position of a user in the queue
+app.get('/user-position/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const position = getUserPositionInQueue(userId);
+  res.json({ position: position });
+});
+
 // webhook callback
 app.post('/webhook', line.middleware(config), (req, res) => {
   if (!Array.isArray(req.body.events)) {
@@ -43,8 +69,30 @@ const replyText = (replyToken, text, quoteToken) => {
   });
 };
 
-const replyTextandSticker = (replyToken, text, quoteToken,stickerId,packageId) => {
+function addToQueue(userId) {
+  // Check if the user is already in the queue
+  if (!queue.includes(userId)) {
+    queue.push(userId);
+    // Optionally, you can save the queue state to a database or storage here
+  }
+}
 
+function removeFromQueue() {
+  if (queue.length > 0) {
+    queue.shift(); // Remove the first user from the queue
+    // Optionally, you can save the updated queue state to a database or storage here
+  }
+}
+
+function getQueueSize() {
+  return queue.length;
+}
+
+function getUserPositionInQueue(userId) {
+  return queue.indexOf(userId);
+}
+
+const replyTextandSticker = (replyToken, text, quoteToken,stickerId,packageId) => {
   const stickerMessage = {
     type: 'sticker',
     packageId: packageId,
@@ -129,6 +177,8 @@ function handleEvent(event) {
         text += ' ได้อยู่ในคิวแล้ว';
         text += '\nคิวของคุณคือคิวที่ ';
         text += queue.indexOf(userId) + 1;
+        text += '\nเวลาเฉลี่ยที่ต้องรอคื';
+        text += (queue.indexOf(userId) + 1) * 30;
         replyText(event.replyToken,text,event.quoteToken);
         // Handle the user's display name
       })
